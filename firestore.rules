@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: favorites
+    // Document ID: {userId}_{trackId}
+    // Fields:
+    //   - id: string (required) - Track ID
+    //   - title: string (required) - Track title
+    //   - artist: string (required) - Track artist
+    //   - album: string (optional) - Track album
+    //   - coverUrl: string (optional) - Track cover URL
+    //   - audioUrl: string (optional) - Track audio URL
+    //   - duration: number (optional) - Track duration
+    //   - genre: string (optional) - Track genre
+    //   - userId: string (required) - The user who favorited this track
+    //   - createdAt: timestamp (required) - When it was favorited
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidTrack(data) {
+      return data.keys().hasAll(['id', 'title', 'artist', 'userId', 'createdAt']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.artist is string && data.artist.size() > 0 && data.artist.size() < 200 &&
+             data.userId == request.auth.uid &&
+             data.createdAt is timestamp;
+    }
+
+    match /favorites/{favoriteId} {
+      // Allow user to read their own favorites
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Allow user to create/delete their own favorites
+      allow create: if isAuthenticated() && isValidTrack(request.resource.data);
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // No updates allowed for favorites, just create/delete
+      allow update: if false;
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+  }
+}

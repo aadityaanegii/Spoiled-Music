@@ -1,0 +1,28 @@
+{
+  "entities": {
+    "Track": {
+      "title": "Track",
+      "description": "A music track",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "artist": { "type": "string" },
+        "album": { "type": "string" },
+        "coverUrl": { "type": "string" },
+        "audioUrl": { "type": "string" },
+        "duration": { "type": "number" },
+        "genre": { "type": "string" },
+        "userId": { "type": "string", "description": "The user who favorited this track" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "artist", "userId"]
+    }
+  },
+  "firestore": {
+    "/favorites/{favoriteId}": {
+      "schema": "Track",
+      "description": "User favorite tracks"
+    }
+  }
+}
